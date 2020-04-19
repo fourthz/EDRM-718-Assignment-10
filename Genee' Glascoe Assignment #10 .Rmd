@@ -5,3 +5,65 @@ date: "April 16, 2020"
 output: html_notebook
 ---
 
+**This notebook is to eplore about importing and wrangling data utilzing tidyverse**
+
+***
+### Question 1
+
+```{r}
+library(tidyverse)
+library(here)
+```
+
+```{r}
+johnson.data <- read_csv("Johnson Elementary ELA Project.csv",  skip = 4,
+                              col_names = c("Room", "ID", "Tardies;Absences",
+                                            "Q1", "Q2", "Q3", "Q4"))
+
+```
+
+```{r}
+tidyjohnson.data <- johnson.data%>%
+  fill(Room)%>%
+  drop_na(Room:Q4) %>%
+  separate('Tardies;Absences', into = c("tardies", "absences"), sep = ";", 
+           convert = TRUE)
+```
+
+***
+### Question 2
+```{r}
+tard.abs.summaries <- tidyjohnson.data %>%
+  group_by(Room) %>%
+  summarize(tardies_mean = mean(tardies, na.rm = TRUE),
+            tardies_sd = sd(tardies),
+            absences_mean = mean(absences, na.rm = TRUE),
+            absences_sd = sd(absences))
+```
+
+***
+### Question 3
+```{r}
+missing.room.data <- tidyjohnson.data %>%
+  group_by(Room) %>%
+  count(sum(is.na(Q1:Q4))) 
+```
+
+***
+### Question 4
+```{r}
+median.boxplot <- tidyjohnson.data %>%
+  group_by(Room) %>%
+  mutate(median_scores = median(select(Q1:Q4))) %>%
+  ggplot(mapping = aes(x = Room, y = median_scores, color = Room)) +
+    labs(x = "Fifth Grade Classroom", y = "Median Ratings", 
+         title = "Fifth Grade Ratings across Four Quarters for each Classroom")
+```
+
+***
+### Question 5
+```{r}
+flights <- read_csv(here("Data","NYC Flights 2013.csv"))
+```
+
+
