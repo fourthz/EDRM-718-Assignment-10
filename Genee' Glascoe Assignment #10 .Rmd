@@ -10,6 +10,8 @@ output: html_notebook
 ***
 ### Question 1
 
+# This script is importing and tidying the Johnson Elementary Project Data.
+
 ```{r}
 library(tidyverse)
 library(here)
@@ -25,13 +27,19 @@ johnson.data <- read_csv("Johnson Elementary ELA Project.csv",  skip = 4,
 ```{r}
 tidyjohnson.data <- johnson.data%>%
   fill(Room)%>%
-  drop_na(Room:Q4) %>%
+  drop_na(ID) %>%
   separate('Tardies;Absences', into = c("tardies", "absences"), sep = ";", 
-           convert = TRUE)
+           convert = TRUE)%>%
+  gather(`Q1`, `Q2`, `Q3`, `Q4`,
+         key = "Quarters",
+         value = "Ratings")
 ```
 
 ***
 ### Question 2
+
+# This script is providing summary statistics for the number of tardies and absences for each room.
+
 ```{r}
 tard.abs.summaries <- tidyjohnson.data %>%
   group_by(Room) %>%
@@ -43,27 +51,60 @@ tard.abs.summaries <- tidyjohnson.data %>%
 
 ***
 ### Question 3
+
+# This script is to show the frequency of missing data points for each quarter by room
+
 ```{r}
 missing.room.data <- tidyjohnson.data %>%
-  group_by(Room) %>%
-  count(sum(is.na(Q1:Q4))) 
+  group_by(Room, Quarters) %>%
+  summarize(sum(is.na(Ratings)))
+
+missing.room.data
 ```
 
 ***
 ### Question 4
+
+# This is a graph that illustrates the median rating trends across the four quarters forthe fifth-grade classes
+
 ```{r}
-median.boxplot <- tidyjohnson.data %>%
-  group_by(Room) %>%
-  mutate(median_scores = median(select(Q1:Q4))) %>%
-  ggplot(mapping = aes(x = Room, y = median_scores, color = Room)) +
-    labs(x = "Fifth Grade Classroom", y = "Median Ratings", 
-         title = "Fifth Grade Ratings across Four Quarters for each Classroom")
+median.chart <- tidyjohnson.data %>%
+  group_by(Room, Quarters) %>%
+  summarize(median_scores = median(Ratings, na.rm = TRUE)) %>%
+  ggplot(aes(x = Quarters, y = median_scores, group = Room)) +
+  geom_point(aes(color = Room)) +
+  facet_wrap(vars(Room)) +
+  guides(color = "none")
+    labs(x = "Quarters", y = "Median Ratings", 
+         title = "Fifth Grade Median Ratings across Four Quarters for each Classroom")
+
+median.chart
 ```
 
 ***
 ### Question 5
+
+# This is a graph that compares Airline carriers in terms of the proportion of 2013 flights that arrived on time when traveling from New York City to Atlanta.
+
 ```{r}
 flights <- read_csv(here("Data","NYC Flights 2013.csv"))
 ```
 
+```{r}
+flights %>% mutate(on_time = (arr_delay <= 0)) %>%
+  filter(dest == "ATL", !is.na(on_time)) %>%
+  ggplot(aes(x = carrier)) +
+    geom_bar(aes(fill = on_time), position = "fill") +
+    labs(title = "On-Time Rates for Carriers from NYC to ATL",
+         x = "Airline Carrier",
+         y = "Proportion") +
+  coord_flip() +
+    scale_fill_discrete(name = "Arrival Status",
+                      labels = c("Not on Time",
+                                 "On Time")) +
+    scale_x_discrete(labels = c("United", "Delta",
+                              "ExpressJet", "Envoy", 
+                              "Southwest", "AirTran", 
+                              "Endeavor")) 
+```
 
